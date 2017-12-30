@@ -21,6 +21,8 @@ text {
 }
 
 svg {
+    width: 100%;
+    max-width: 420px;
     margin: 0 auto;
     display: block;
 }
@@ -34,15 +36,9 @@ d3.csv('subreddit_genders.csv',
     }, function(error, data) {
         if (error) throw error;
 
-        var width = 420,
-            barHeight = 25;
-
-        var x = d3.scaleLinear()
-            .domain([0, 1])
-            .range([0, width]);
+        var barHeight = 25;
 
         var chart = d3.select('svg')
-            .attr('width', width)
             .attr('height', barHeight * data.length);
 
         var stack = d3.stack()
@@ -55,14 +51,14 @@ d3.csv('subreddit_genders.csv',
 
         bar.append('rect')
             .attr('class', 'male')
-            .attr('x', function(d) { return x(d[0][0])})
-            .attr('width', function(d) { return x(d[0][1] - d[0][0]); })
+            .attr('x', function(d) { return 100 * d[0][0] + "%"; })
+            .attr('width', function(d) { return 100 * (d[0][1] - d[0][0]) + "%"; })
             .attr('height', barHeight - 1);
         
         bar.append('rect')
             .attr('class', 'female')
-            .attr('x', function(d) { return x(d[1][0])})
-            .attr('width', function(d) { return x(d[1][1] - d[1][0]); })
+            .attr('x', function(d) { return 100 * d[1][0] + "%"; })
+            .attr('width', function(d) { return 100 * (d[1][1] - d[1][0]) + "%"; })
             .attr('height', barHeight - 1);
 
         bar.append('text')
