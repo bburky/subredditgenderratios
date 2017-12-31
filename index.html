@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
+<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css'>
 <style>
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'FontAwesome', Arial, Helvetica, sans-serif;
     width: 100%;
     max-width: 420px;
     margin: 0 auto;
@@ -13,21 +14,29 @@ body {
 
 h1 {
     text-align: center;
-    font-family: Arial, Helvetica, sans-serif;
     font-size: 32px;
 }
 
 .male {
-  fill: steelblue;
+  fill: rgb(68, 131, 182);
 }
 
 .female {
   fill: rgb(218, 168, 176);
 }
 
+a {
+    color: rgb(68, 131, 182);
+}
+
+g:hover{
+    opacity: 0.85;
+    cursor: pointer;
+}
+
 text {
   fill: white;
-  font: 12px sans-serif;
+  font-size: 12px;
 }
 
 svg {
@@ -63,7 +72,7 @@ p, label, pre {
 }
  
 button {
-    width: 8em;
+    width: 9em;
     padding: 6px;
     border: 1px solid white;
     background-color: #888;
@@ -74,6 +83,42 @@ button:hover {
     background-color: #999;
     cursor: pointer;
 }
+
+#dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    max-width: 80%;
+    background-color: white;
+    -webkit-box-shadow: 0px 0px 2500px 1000px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 0px 2500px 1000px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 2500px 1000px rgba(0,0,0,0.75);
+    padding: 12px;
+
+    /* Initially hidden */
+    display: none;
+}
+
+#dialog h2 {
+    margin: 0;
+}
+#dialog dt {
+    font-weight: bold;
+    margin-top: 6px;
+}
+#dialog dd {
+    margin: 0;
+}
+
+#dialog #close-button {
+    float: right;
+    font-size: 24px;
+    margin: -6px -6px 0 0;
+    cursor: pointer;
+}
+
 </style>
 <h1>Subreddit Gender Ratios</h1>
 <label id=foo>Sort subreddits by:</label>
@@ -97,6 +142,18 @@ button:hover {
 Blake Burkhart
 <a href='https://www.reddit.com/user/bburky'>/u/bburky</a>
 </pre>
+<div id=dialog>
+    <i id='close-button' class='fa fa-times' aria-hidden='true'></i>
+    <h2><a href='#'>/r/all</a></h2>
+    <dl>
+        <dt>Total commenters</dt>
+        <dd id=dialog-commenters>1123123</dd>
+        <dt>Gender Ratio</dt>
+        <dd id=dialog-ratio>50% male / 50% female</dd>
+        <dt>Sampled users</dt>
+        <dd id=dialog-sampled>123 male users / 11 female users</dd>
+    </dl>
+</div>
 <script src='https://d3js.org/d3.v4.min.js'></script>
 <script>
 var sortOrder = null;
@@ -186,8 +243,42 @@ function drawChart() {
         .attr('x', 6)
         .attr('y', barHeight / 2)
         .attr('dy', '.35em')
-        .text(function(d) { return d[0].data.subreddit; });
+        .text(function(d) { return d[0].data.subreddit; })
     
+    newBar.on('mouseover', function(d) {
+        d3.select(this).select('text')
+            .text(function(d) { return d[0].data.subreddit + '\u00a0\u00a0\uf05a'; })
+    });
+    
+    newBar.on('mouseout', function(d) {
+        d3.select(this).select('text')
+            .text(function(d) { return d[0].data.subreddit; })
+    });
+
+    newBar.on('click', function(d) {
+        d3.event.stopPropagation();
+
+        var dialog = d3.select('#dialog');
+        dialog.select('h2 a')
+            .attr('href', 'https://www.reddit.com/r/' + d[0].data.subreddit)
+            .text('/r/' + d[0].data.subreddit);
+        dialog.select('#dialog-commenters').text(
+            d3.format(',')(d[0].data.subreddit_size));
+        dialog.select('#dialog-ratio').text(
+            d3.format('.1f')(d[0].data.male_ratio * 100) + '% male / ' +
+            d3.format('.1f')(d[0].data.female_ratio * 100) + '% female')
+        dialog.select('#dialog-sampled').text(
+            d3.format(',')(d[0].data.male) + ' male users / ' +
+            d3.format(',')(d[0].data.female) + ' female users')
+        dialog.style('display', 'block');
+    });
+
     bar.exit().remove();
+
+    // This is horribly lazy, and only mostly works
+    d3.select('html').on('click', function(d) {
+        var dialog = d3.select('#dialog');
+        dialog.style('display', 'none');
+    });
 }
 </script>
