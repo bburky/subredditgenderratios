@@ -41,11 +41,9 @@ text {
 
 svg {
     width: 100%;
-    text-align: center;
 }
 
 p, label, pre {
-    text-align: left;
     display: block;
     margin: 12px auto;
     clear: both;
@@ -57,7 +55,6 @@ p, label, pre {
     max-width: 408px;
     margin: 6px -6px 0 0;
     display: block;
-    text-align: center;
 }
 
 #minimum-size {
@@ -82,6 +79,14 @@ button {
 button:hover {
     background-color: #aaa;
     cursor: pointer;
+}
+
+#search {
+    width: 100%;
+    max-width: 408px;
+    margin: 6px -6px 0 0;
+    display: block;
+    text-align: center;
 }
 
 #dialog {
@@ -133,6 +138,10 @@ button:hover {
     <input id=minimum-size type=number value=550000>
     <input id=minimum-size-range type=range value=550000 min=1 max=700000>
 </label>
+<label for=search>
+    Search subreddits:
+    <input type=search id=search>
+</label>
 <svg></svg>
 <p>
     For a detailed description and methodology please read the <a href='http://nbviewer.jupyter.org/github/bburky/subredditgenderratios/blob/master/Subreddit%20Gender%20Ratios.ipynb'>notebook</a>.
@@ -159,10 +168,16 @@ Blake Burkhart
 <script>
 var sortOrder = null;
 var data = null;
+var search = null;
 var minimumSize = d3.select('#minimum-size').property('value');
 
 d3.selectAll('button').on('click', function() {
     sortOrder = this.id.split('-')[1];
+    drawChart();
+})
+
+d3.selectAll('#search').on('change', function() {
+    search = this.value;
     drawChart();
 })
 
@@ -205,8 +220,16 @@ function drawChart() {
     }
 
     var barHeight = 25;
+
     var filteredData = data.filter(
-        function(d) { return d.subreddit_size >= minimumSize; });
+        function(d) {
+            if (search) {
+                return d.subreddit.toLowerCase().indexOf(search) > -1;
+            } else {
+                return d.subreddit_size >= minimumSize;
+            }
+        });
+
     var chart = d3.select('svg')
        .attr('height', barHeight * filteredData.length);
 
