@@ -2,14 +2,17 @@
 <meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
 <style>
-body, html {
+body {
     margin: 0;
     padding: 0;
-    text-align: center;
     font-family: Arial, Helvetica, sans-serif;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
 }
 
 h1 {
+    text-align: center;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 32px;
 }
@@ -29,27 +32,81 @@ text {
 
 svg {
     width: 100%;
-    max-width: 420px;
-    margin: 0 auto;
+    text-align: center;
+}
+
+p, label {
+    text-align: left;
     display: block;
+    margin: 12px auto;
+    clear: both;
+}
+
+#minimum-size-range {
+    width: 100%;
+    margin: 6px 0 0 0;
+}
+
+#minimum-size {
+    width: 7em;
+    float: right;
+}
+
+#button-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+ 
+button {
+    width: 8em;
+    padding: 6px;
+    border: 1px solid white;
+    background-color: #888;
+    color: white;
+}
+
+button:hover {
+    background-color: #999;
+    cursor: pointer;
 }
 </style>
 <h1>Subreddit Gender Ratios</h1>
-<p>
-    Sort by:
-    <button id="sort-subreddit_size">Total commenters</button>
-    <button id="sort-male_ratio">Male ratio</button>
-    <button id="sort-female_ratio">Female Ratio</button>
-</p>
+<label id=foo>Sort subreddits by:</label>
+<div id=button-container>
+    <button id='sort-subreddit_size'>Subreddit size</button>
+    <button id='sort-male_ratio'>Male ratio</button>
+    <button id='sort-female_ratio'>Female Ratio</button>
+</div>
+<label for=minimum-size>
+    Minimum subreddit size:
+    <input id=minimum-size type=number value=550000>
+    <input id=minimum-size-range type=range value=550000 min=1 max=700000>
+</label>
 <svg></svg>
+<p>
+    For a detailed description and methodology please read the <a href='http://nbviewer.jupyter.org/github/bburky/subredditgenderratios/blob/master/Subreddit%20Gender%20Ratios.ipynb'>notebook</a>.
+</p>
+<pre>
+
+-- 
+Blake Burkhart
+<a href='https://www.reddit.com/user/bburky'>/u/bburky</a>
+</pre>
 <script src='https://d3js.org/d3.v4.min.js'></script>
 <script>
 var sortOrder = null;
 var data = null;
+var minimumSize = d3.select('#minimum-size').property('value');
 
-
-d3.selectAll('button').on('click', function(d, i) {
+d3.selectAll('button').on('click', function() {
     sortOrder = this.id.split('-')[1];
+    drawChart();
+})
+
+d3.selectAll('#minimum-size-range, #minimum-size').on('change', function(d, i) {
+    minimumSize = +this.value;
+    d3.selectAll('#minimum-size-range, #minimum-size').property('value', minimumSize)
     drawChart();
 })
 
@@ -69,6 +126,10 @@ d3.csv('subreddit_genders.csv',
         }
         data = csvData;
         drawChart();
+
+        // This works, but allows limiting the number of rows in the chart too much
+        // d3.select('#minimum-size-range')
+        //     .attr('max', d3.max(data, function(d) { return d.subreddit_size; }));
 });
 
 function drawChart() {
@@ -82,9 +143,10 @@ function drawChart() {
     }
 
     var barHeight = 25;
-
+    var filteredData = data.filter(
+        function(d) { return d.subreddit_size >= minimumSize; });
     var chart = d3.select('svg')
-       .attr('height', barHeight * data.length);
+       .attr('height', barHeight * filteredData.length);
 
     var stack = d3.stack()
         .keys(['male_ratio', 'female_ratio']);
@@ -94,26 +156,27 @@ function drawChart() {
         .ease(d3.easeLinear);
 
     var bar = chart.selectAll('g').data(
-        d3.transpose(stack(data)),
+        d3.transpose(
+            stack(filteredData)),
         function(d) { return d[0].data.subreddit; });
 
     bar
         // .transition(transition)
-        .attr('transform', function(d, i) { return 'translate(0,' + i * barHeight + ')'; });
+        .attr('transform', function(d, i) {return 'translate(0,' + i * barHeight + ')'; });
 
     var newBar = bar.enter().append('g')
         .attr('transform', function(d, i) { return 'translate(0,' + i * barHeight + ')'; });
 
     newBar.append('rect')
         .attr('class', 'male')
-        .attr('x', function(d) { return 100 * d[0][0] + "%"; })
-        .attr('width', function(d) { return 100 * (d[0][1] - d[0][0]) + "%"; })
+        .attr('x', function(d) { return 100 * d[0][0] + '%'; })
+        .attr('width', function(d) { return 100 * (d[0][1] - d[0][0]) + '%'; })
         .attr('height', barHeight - 1);
 
     newBar.append('rect')
         .attr('class', 'female')
-        .attr('x', function(d) { return 100 * d[1][0] + "%"; })
-        .attr('width', function(d) { return 100 * (d[1][1] - d[1][0]) + "%"; })
+        .attr('x', function(d) { return 100 * d[1][0] + '%'; })
+        .attr('width', function(d) { return 100 * (d[1][1] - d[1][0]) + '%'; })
         .attr('height', barHeight - 1);
 
     newBar.append('text')
@@ -121,6 +184,8 @@ function drawChart() {
         .attr('y', barHeight / 2)
         .attr('dy', '.35em')
         .text(function(d) { return d[0].data.subreddit; });
+    
+    bar.exit().remove();
 
 
 }
