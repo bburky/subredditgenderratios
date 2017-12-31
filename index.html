@@ -53,7 +53,7 @@ p, label, pre {
 #minimum-size-range {
     width: 100%;
     max-width: 408px;
-    margin: 6px -6px 0 0;
+    margin: 12px -6px 0 0;
     display: block;
 }
 
@@ -67,7 +67,7 @@ p, label, pre {
     flex-direction: row;
     justify-content: space-evenly;
 }
- 
+
 button {
     width: 9em;
     padding: 6px;
@@ -125,23 +125,57 @@ button:hover {
     cursor: pointer;
 }
 
+#filter-box{
+    border: 1px solid #999;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+}
+
+#filter-button {
+    font-weight: bold;
+    margin: 0px 0 0 10px;
+    width: 100%;
+}
+
+#filter-button:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#filter-button i {
+    font-size: 24px;
+    position: relative;
+    bottom: -2px;
+}
+
+#filters {
+    overflow: hidden;
+
+    /* Initially hidden */
+    max-height: 0;
+}
 </style>
 <h1>Subreddit Gender Ratios</h1>
-<label id=foo>Sort subreddits by:</label>
-<div id=button-container>
-    <button id='sort-subreddit_size'>Subreddit size</button>
-    <button id='sort-male_ratio'>Male ratio</button>
-    <button id='sort-female_ratio'>Female Ratio</button>
+<div id=filter-box>
+    <div id=filter-button><i class="fa fa-caret-right" aria-hidden="true"></i> Filters</div>
+    <div id=filters>
+        <label id=foo>Sort subreddits by:</label>
+        <div id=button-container>
+            <button id='sort-subreddit_size'>Subreddit size</button>
+            <button id='sort-male_ratio'>Male ratio</button>
+            <button id='sort-female_ratio'>Female Ratio</button>
+        </div>
+        <label for=minimum-size>
+            Minimum subreddit size:
+            <input id=minimum-size type=number value=550000>
+            <input id=minimum-size-range type=range value=550000 min=1 max=700000>
+        </label>
+        <label for=search>
+            Search subreddits:
+            <input type=search id=search>
+        </label>
+    </div>
 </div>
-<label for=minimum-size>
-    Minimum subreddit size:
-    <input id=minimum-size type=number value=550000>
-    <input id=minimum-size-range type=range value=550000 min=1 max=700000>
-</label>
-<label for=search>
-    Search subreddits:
-    <input type=search id=search>
-</label>
 <svg></svg>
 <p>
     For a detailed description and methodology please read the <a href='http://nbviewer.jupyter.org/github/bburky/subredditgenderratios/blob/master/Subreddit%20Gender%20Ratios.ipynb'>notebook</a>.
@@ -170,22 +204,39 @@ var sortOrder = null;
 var data = null;
 var search = null;
 var minimumSize = d3.select('#minimum-size').property('value');
+var filtersVisible = false;
+
+var transition = d3.transition()
+        .duration(300)
+        .ease(d3.easeLinear);
+
+d3.selectAll('#filter-button').on('click', function() {
+    if (filtersVisible){
+        d3.select('#filters').transition(transition).style('max-height', '0px');
+        d3.select('#filter-button i').attr('class', 'fa fa-caret-right');
+        filtersVisible = false;
+    } else {
+        d3.select('#filters').transition(transition).style('max-height', '500px');
+        d3.select('#filter-button i').attr('class', 'fa fa-caret-down');
+        filtersVisible = true;
+    }
+});
 
 d3.selectAll('button').on('click', function() {
     sortOrder = this.id.split('-')[1];
     drawChart();
-})
+});
 
 d3.selectAll('#search').on('change', function() {
     search = this.value;
     drawChart();
-})
+});
 
 d3.selectAll('#minimum-size-range, #minimum-size').on('change', function(d, i) {
     minimumSize = +this.value;
     d3.selectAll('#minimum-size-range, #minimum-size').property('value', minimumSize)
     drawChart();
-})
+});
 
 d3.csv('subreddit_genders.csv',
     function(d) {
@@ -235,10 +286,6 @@ function drawChart() {
 
     var stack = d3.stack()
         .keys(['male_ratio', 'female_ratio']);
-
-   var transition = d3.transition()
-        .duration(300)
-        .ease(d3.easeLinear);
 
     var bar = chart.selectAll('g').data(
         d3.transpose(
