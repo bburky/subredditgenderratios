@@ -9,7 +9,6 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'UA-48075254-1');
 </script>
 <style>
@@ -296,7 +295,7 @@ function drawChart() {
     var filteredData = data.filter(
         function(d) {
             if (search) {
-                return d.subreddit.toLowerCase().indexOf(search) > -1;
+                return d.subreddit.toLowerCase().indexOf(search.toLowerCase()) > -1;
             } else {
                 return d.subreddit_size >= minimumSize;
             }
