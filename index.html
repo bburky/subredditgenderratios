@@ -152,7 +152,7 @@ function drawChart() {
         .keys(['male_ratio', 'female_ratio']);
 
    var transition = d3.transition()
-        .duration(1000)
+        .duration(300)
         .ease(d3.easeLinear);
 
     var bar = chart.selectAll('g').data(
@@ -160,8 +160,7 @@ function drawChart() {
             stack(filteredData)),
         function(d) { return d[0].data.subreddit; });
 
-    bar
-        // .transition(transition)
+    bar.transition(transition)
         .attr('transform', function(d, i) {return 'translate(0,' + i * barHeight + ')'; });
 
     var newBar = bar.enter().append('g')
