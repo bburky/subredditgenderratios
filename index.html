@@ -5,6 +5,13 @@
 body, html {
     margin: 0;
     padding: 0;
+    text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h1 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 32px;
 }
 
 .male {
@@ -27,44 +34,94 @@ svg {
     display: block;
 }
 </style>
+<h1>Subreddit Gender Ratios</h1>
+<p>
+    Sort by:
+    <button id="sort-subreddit_size">Total commenters</button>
+    <button id="sort-male_ratio">Male ratio</button>
+    <button id="sort-female_ratio">Female Ratio</button>
+</p>
 <svg></svg>
 <script src='https://d3js.org/d3.v4.min.js'></script>
 <script>
+var sortOrder = null;
+var data = null;
+
+
+d3.selectAll('button').on('click', function(d, i) {
+    sortOrder = this.id.split('-')[1];
+    drawChart();
+})
+
 d3.csv('subreddit_genders.csv',
-    function(d, i, columns) {
-        return d;
-    }, function(error, data) {
-        if (error) throw error;
-
-        var barHeight = 25;
-
-        var chart = d3.select('svg')
-            .attr('height', barHeight * data.length);
-
-        var stack = d3.stack()
-            .keys(['male_ratio', 'female_ratio']);
-        
-        var bar = chart.selectAll('g')
-            .data(d3.transpose(stack(data)))
-            .enter().append('g')
-            .attr('transform', function(d, i) { return 'translate(0,' + i * barHeight + ')'; });
-
-        bar.append('rect')
-            .attr('class', 'male')
-            .attr('x', function(d) { return 100 * d[0][0] + "%"; })
-            .attr('width', function(d) { return 100 * (d[0][1] - d[0][0]) + "%"; })
-            .attr('height', barHeight - 1);
-        
-        bar.append('rect')
-            .attr('class', 'female')
-            .attr('x', function(d) { return 100 * d[1][0] + "%"; })
-            .attr('width', function(d) { return 100 * (d[1][1] - d[1][0]) + "%"; })
-            .attr('height', barHeight - 1);
-
-        bar.append('text')
-            .attr('x', 6)
-            .attr('y', barHeight / 2)
-            .attr('dy', '.35em')
-            .text(function(d) { return d[0].data.subreddit; });
+    function(d) {
+        return {
+            subreddit: d.subreddit,
+            subreddit_size: +d.subreddit_size,
+            male: +d.male,
+            female: +d.female,
+            male_ratio: +d.male_ratio,
+            female_ratio: +d.female_ratio
+        }
+    }, function(error, csvData) {
+        if (error) {
+            throw error;
+        }
+        data = csvData;
+        drawChart();
 });
+
+function drawChart() {
+    if (!data) {
+        // Data not loaded yet
+        return;
+    }
+
+    if (sortOrder) {
+        data.sort(function(a, b) { return d3.descending(a[sortOrder], b[sortOrder]); });
+    }
+
+    var barHeight = 25;
+
+    var chart = d3.select('svg')
+       .attr('height', barHeight * data.length);
+
+    var stack = d3.stack()
+        .keys(['male_ratio', 'female_ratio']);
+
+   var transition = d3.transition()
+        .duration(1000)
+        .ease(d3.easeLinear);
+
+    var bar = chart.selectAll('g').data(
+        d3.transpose(stack(data)),
+        function(d) { return d[0].data.subreddit; });
+
+    bar
+        // .transition(transition)
+        .attr('transform', function(d, i) { return 'translate(0,' + i * barHeight + ')'; });
+
+    var newBar = bar.enter().append('g')
+        .attr('transform', function(d, i) { return 'translate(0,' + i * barHeight + ')'; });
+
+    newBar.append('rect')
+        .attr('class', 'male')
+        .attr('x', function(d) { return 100 * d[0][0] + "%"; })
+        .attr('width', function(d) { return 100 * (d[0][1] - d[0][0]) + "%"; })
+        .attr('height', barHeight - 1);
+
+    newBar.append('rect')
+        .attr('class', 'female')
+        .attr('x', function(d) { return 100 * d[1][0] + "%"; })
+        .attr('width', function(d) { return 100 * (d[1][1] - d[1][0]) + "%"; })
+        .attr('height', barHeight - 1);
+
+    newBar.append('text')
+        .attr('x', 6)
+        .attr('y', barHeight / 2)
+        .attr('dy', '.35em')
+        .text(function(d) { return d[0].data.subreddit; });
+
+
+}
 </script>
