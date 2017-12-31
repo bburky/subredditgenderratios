@@ -154,11 +154,18 @@ button:hover {
     /* Initially hidden */
     max-height: 0;
 }
+
+#spinner {
+    display: block;
+    text-align: center;
+    font-size: 72px;
+    margin: 72px;
+}
 </style>
 <h1>Subreddit Gender Ratios</h1>
-<div id=filter-box>
-    <div id=filter-button><i class="fa fa-caret-right" aria-hidden="true"></i> Filters</div>
-    <div id=filters>
+<div id='filter-box'>
+    <div id='filter-button'><i class='fa fa-caret-right' aria-hidden='true'></i> Filters</div>
+    <div id='filters'>
         <label id=foo>Sort subreddits by:</label>
         <div id=button-container>
             <button id='sort-subreddit_size'>Subreddit size</button>
@@ -176,6 +183,7 @@ button:hover {
         </label>
     </div>
 </div>
+<i id='spinner' class='fa fa-spinner fa-spin' aria-hidden='true'></i>
 <svg></svg>
 <p>
     For a detailed description and methodology please read the <a href='http://nbviewer.jupyter.org/github/bburky/subredditgenderratios/blob/master/Subreddit%20Gender%20Ratios.ipynb'>notebook</a>.
@@ -269,6 +277,8 @@ function drawChart() {
     if (sortOrder) {
         data.sort(function(a, b) { return d3.descending(a[sortOrder], b[sortOrder]); });
     }
+
+    d3.select('#spinner').style('display', 'none');
 
     var barHeight = 25;
 
